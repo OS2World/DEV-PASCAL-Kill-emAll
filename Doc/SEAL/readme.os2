@@ -1,0 +1,138 @@
+This is the OS/2 port of the Synthetic Audio Library (SEAL).
+
+The DLL included can be used to add OS/2 native support for playing module
+files and multi-channel streamed audio to OS/2 Presentation Manager (PM) and
+VIO applications. It can also be used to assist in the porting of other DOS,
+Windows, and Linux applications that also use the SEAL API.
+
+To build applications with the SEAL library, simply link them with the
+AUDIO.LIB file and include the AUDIO.H file in your programs. The SEAL
+documentation covers the usage of the standard SEAL API. There are a few
+additional considerations in using the OS/2 version:
+
+*  The OS/2 version is multithreaded.  This means that the SEAL library is
+   updating the audio buffers in the background while the rest of your
+   application is running.  Unlike the DOS and Windows versions, you DO NOT
+   HAVE TO call the AUpdateAudio function to update the audio buffers. This
+   also means that some care needs to be taken when updating the voices
+   and sound buffers yourself.  It is recommended that you use DosEnterCritSec
+   and DosExitCritSec around areas where voices are created and destroyed.
+
+*  Some of the SEAL API functions require other threads to be running when
+   they are called.  If you are in a critical section when you call some
+   functions, it can cause deadlock because the critical section prevents
+   other threads in the same task from running.  Do not call the following
+   functions in a critical section: AOpenAudio, ACloseAudio, AUpdateAudio.
+
+*  The AUpdateAudio function was implemented, but not to update the audio.
+   It was made to be a means of synchronizing your application with the audio
+   stream.  When you call AUpdateAudio, the calling thread will block until
+   an audio buffer needs more data.
+
+*  To improve compatibility with different sound cards and to be able to
+   adjust some settings that are not covered by the SEAL API, environment
+   variables are checked when the audio system is initialized.  The
+   environment variables are as follows:
+
+   SEAL_AUDIO_SHARE - If this is set to 1 or true or yes, the audio device
+   is shared with the rest of the system and other applications can
+   interrupt the sound.  If it is not defined, SEAL takes ownership of the
+   audio device and does not allow other applications to use it.
+
+   SEAL_BUFFER_SIZE - For some sound drivers, the buffer size chosen by
+   SEAL is too small causing a system lockup at worst case or unrecognizable
+   sound most likely.  If you notice these symptoms try experimenting with
+   this value.  I have found that about 12K should be more than enough for
+   most sound cards.  This is a good safe starting point if you are having 
+   trouble.  Note that increasing this value will increase the latency and
+   delay time in streamed audio applications.
+
+   The default buffer size is calculated as follows:
+   ( 266 * Sample Frequency / 22050 ) * Sample Size
+
+   where Sample Frequency is the frequency in Hz that SEAL will be playing
+   and Sample Size is 1 for 8 bit mono sound, 2 for 8 bit stereo sound,
+                      2 for 16 bit mono sound, and 4 for 16 bit stereo sound.
+
+*  Using the DART driver can reduce the overhead involved in playing audio
+   in your applications, however, there may be some compatibility issues.
+   The MMPM/2 driver is theoretically more compatible, but has higher overhead
+   and uses about 3 more threads!  In applications, always allow the option to
+   disable DART in case a user has problems with it.
+
+*  Please note that the header file (audio.h) may require some "tweaking" to
+   suit your build environment.  If you need asssitance setting up your
+   environment feel free to e-mail me (mamodeo@stny.rr.com).
+
+*  The linkage convention used to build the DLL is EMX's __stdcall convention.
+   This is defined differently in IBM's Visual Age C!  Use the _System calling
+   convention for Visual Age C (modify the header file appropriately).
+
+*  The main SEAL page is located at http://www.egerter.com/seal and contains
+   complete API documentation.  The SEAL for OS/2 page is at 
+   http://www.netlabs.org/projects/seal.html.
+
+
+Additional functionality in the OS/2 version:
+
+I added the following functions to the SEAL API at the request of some 
+developers.  These functions do not exist in any other port of the SEAL 
+library, so using them will not allow your application to be ported to another
+platform.  There is no documentation for these functions on the main SEAL 
+page, so I supplied the supplementary documentation here:
+
+void ASuggestBufferSize( unsigned long ) 
+
+This function tells the API to use approximately this buffer size before 
+the sound system starts up.  This value will be tweaked by the API if it is 
+needed (if you're using 16 bit stereo sound, for example, it needs to be a 
+multiple of 4).  This function was added to get around using the environment 
+variable SEAL_BUFFER_SIZE to set the audio buffer size.  Setting the 
+environment variable still works, and supercedes the suggested size, but if no
+variable is assigned, you can use this within your program to control the 
+buffer size.  This function can be called at any time, but it only affects the
+next AOpenAudio call.
+
+unsigned long AGetBufferSize( void )
+
+AGetBufferSize allows you to see what the real buffer size actually wound
+up being.  This can only be called after AOpenAudio.  It will either be the
+default buffer size (really small), the suggested size rounded to a sample
+boundary, or the size specified in the environment variable rounded to a
+sample boundary.
+
+void ARegisterFilter( void (*audfilter) ( unsigned char*, unsigned long ) )
+
+ARegisterFilter allows you to set a callback routine that will execute just
+before mixed audio data is sent to the sound card.  It allows you to
+intercept the data and apply a custom filter effect to it, or perhaps get 
+statistical data on it and draw a pretty graphical display.  :)  You may only
+apply one filter function at a time.  Calling this function a second time will
+replace the previous filter function.  Calling this function with a NULL 
+pointer will disable the existing filter function.  There is a new example
+included in this distribution under audio\examples called digwave.c which
+shows how to use this function.  An executable file was also made from it
+and included in audio\bin\os2.  It takes a command line parameter of the
+name of a song module file to play.
+
+
+OS/2 Specific Bugs:
+
+*  Only one application that uses SEAL may be opened at a given time.  Opening
+   another SEAL application will likely cause both applications to crash.  This 
+   problem will be addressed.
+
+*  When OpenChat/2 tries to play a sound while a SEAL application has control 
+   of the sound card, OpenChat/2 will crash and the WPS will restart.  I 
+   believe this is a problem with OpenChat/2 because other applications seem 
+   to handle this situation properly.
+
+*  Opening a large file in EPM and using the UP arrow key to scroll through it
+   will cause the sound to be choppy!  This doesn't happen under any other kind
+   of system load (dragging windows, heavy computation, etc.) or even any other
+   action in EPM (not even scrolling down!), but EPM is doing something very 
+   weird here!  I have not noticed any other strange interactions with other 
+   applications.  I have noticed this problem using Matrox graphics drivers.
+
+- Marty
+  [mamodeo@stny.rr.com]

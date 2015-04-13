@@ -1,0 +1,6 @@
+
+Web Page:
+http://seal.netlabs.org/
+
+Download:
+ftp://hobbes.nmsu.edu/pub/os2/dev/mm/seal106c_os2.zip

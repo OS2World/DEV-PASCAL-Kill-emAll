@@ -1,0 +1,100 @@
+DualMode Library release 4
+==========================
+
+Written by Marty Amodeo (mamodeo@stny.rr.com)
+
+
+For documentation on how to use this library, please read through the included
+file Dualmode.h.  It contains the developer's interface as well as all of the
+documentation you should need to get started writing dual mode applications.
+
+
+What's new with release 4
+-------------------------
+
+* MGLSC_init modified to allow viewport to be set
+* MGLSC_setViewPort call added
+  This allows you to set only a portion of the video buffer as displayable, so
+  that you can allocate a larger video buffer and not have to worry about
+  clipping your images.  If the viewport is enlarged, the window will also be
+  resized, but kept in the same scale as it was previously.  In other words,
+  if the previous viewport size was 320x200 and the user stretched it to
+  640x400, and you are changing the viewport size to 320x240, the window size
+  will be set to 640x480 (maintaining an X and Y scaling of 2x).
+
+* Added MGLSC_setMousePosition API call
+  You can now set the mouse position with one API call.
+
+* WM_SETWINSIZE modified
+  This message now accepts an X and Y scaling factor and can be given
+  fractional scaling factors.  They are both fixed-point numbers where 1000
+  is equal to 1.
+
+* Multi-session capable
+  The DLL was constructed so that multiple apps can now make use of it at the
+  same time without corrupting each other's data.  Note however, that only one
+  app can use MGLServer at a time.
+
+* Built with a new drop of MGL which supports SDDDaemn for running MGL apps
+  with video drivers that don't have PMI support (like the Matrox drivers)
+
+* Stack size reduced to 32KB (formerly, I specified the wrong parameter when
+  it was built and the stack size was set to 32MB!)
+
+* Bug fixed in 24 bit bitmap capture causing image to be captured upside-down
+
+* Bug fixed causing a crash when MGLServer fails to find any of the video
+  modes supported by the application.
+
+* Bug fixed causing joystick info to be returned w/o a joystick in use
+
+* Fixed bugs in 8 bit palette handling when switching between PM and full
+  screen
+
+* Fixed various bugs in MGL_reinit causing an improper full screen video mode
+  to be chosen in some cases
+
+* Fixed lag time in screen mode changing caused by not flushing the user input
+
+
+Cautions and notes
+------------------
+
+* There appears to be a problem with 32 bit per pixel windowed graphics using
+  Scitech Display Doctor and running your desktop in a 16 bit color mode.  I'm
+  working on a workaround until the problem gets resolved.
+
+* Some audio drivers cause a problem with MGL when they are playing sound
+  while MGL is initializing.  To avoid this problem, the first time the
+  user requests to go full screen, you should shut down your application's
+  audio interface and re-enable it when the mode switch is complete.  You
+  can time this correctly simply by using WinSendMsg to pass the WM_TOGGLEFS
+  message rather than WinPostMsg.  When WinSendMsg returns, it is safe to
+  re-enable audio in your application.  Note that you can only issue
+  WinSendMsg from a message queue enabled thread.  Your input handler
+  function will be called from a message queue enabled thread if the input
+  is received in PM mode.
+
+* To allow non-SDD users to run applications made with MGLServer, the users
+  must boot up with the included (or a more recent) version of
+  drivers\SDDHelp.Sys in the MGLServer archive.  You should also have a
+  drivers directory under your program directory containing SDDDaemn.Exe and
+  Graphics.Bpd as I have done in the MGLServer archive.
+
+
+Distribution
+------------
+
+This library can be freely distributed with or without source code.  It may be
+used in and distributed with freeware, shareware, or commercial applications,
+so long as credit is given to the original author.  This library may not be
+sold as a stand-alone package nor can it be merely wrapped by another library
+and sold without the presence of a commercial application utilizing it.  This
+source code can be modified as needed, though as a courtesy to me (the
+original author), I'd appreciate hearing about any improvements that you've
+made so that I can make the library better for everyone.
+
+
+Please send any comments, bug reports, and suggestions to mamodeo@stny.rr.com.
+
+

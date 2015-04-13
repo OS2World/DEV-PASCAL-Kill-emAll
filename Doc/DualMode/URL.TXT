@@ -1,0 +1,7 @@
+
+Web Page:
+http://emuos2.netlabs.org/
+
+Download:
+http://emuos2.netlabs.org/generic/dmlib_r4_srcbin.zip
+http://emuos2.netlabs.org/generic/mglserver_r4_srcbin.zip
